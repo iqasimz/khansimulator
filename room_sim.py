@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Literal, Tuple
 
+import math
+
 
 @dataclass
 class RoomGeometry:
@@ -61,6 +63,19 @@ class SimulationState:
     time_s: float
     air_temp_c: float
     wall_temp_c: float | None = None
+
+
+@dataclass
+class OutdoorTempProfile:
+    mean_c: float = 34.0
+    amplitude_c: float = 6.0
+    peak_hour: float = 15.0
+
+    def temperature_c(self, time_s: float) -> float:
+        # Peak temperature at peak_hour, sinusoidal daily cycle.
+        hours = (time_s / 3600.0) % 24.0
+        phase = 2.0 * math.pi * (hours - self.peak_hour) / 24.0
+        return self.mean_c + self.amplitude_c * math.cos(phase)
 
 
 def _internal_gains_w(params: ThermalParams) -> float:
