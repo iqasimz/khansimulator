@@ -203,6 +203,45 @@ python scripts/eval_rl.py --algo ppo --model runs/room_rl/ppo_room_model.zip --v
 pip install -r requirements.txt
 ```
 
+## Run Guide (Quick Commands)
+
+Activate venv (macOS/Linux):
+
+```
+source .venv/bin/activate
+```
+
+Run tests:
+
+```
+python -m pytest -q
+```
+
+Train PPO:
+
+```
+PYTHONPATH=. python scripts/train_rl.py --algo ppo --timesteps 500000
+```
+
+Train SAC:
+
+```
+PYTHONPATH=. python scripts/train_rl.py --algo sac --timesteps 500000
+```
+
+Evaluate a saved model:
+
+```
+PYTHONPATH=. python scripts/eval_rl.py --algo ppo --model runs/room_rl/ppo_room_model.zip --vecnorm runs/room_rl/vecnormalize.pkl
+```
+
+Validate dynamics + plot:
+
+```
+python scripts/validate_dynamics.py --outdoor-profile > /tmp/dynamics.csv
+python scripts/plot_dynamics.py /tmp/dynamics.csv --out /tmp/dynamics.png
+```
+
 ## End-to-End Run
 
 End-to-end pipeline (validate → plot → train → evaluate):
