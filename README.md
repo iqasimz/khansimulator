@@ -272,6 +272,21 @@ T_out(t) = mean + amplitude * cos(2π * (t_hour - peak_hour) / 24) + noise
 Noise is controlled by `outdoor_noise_std_c` in `EnvConfig`.
 Stochastic process noise is controlled by `process_noise_std_c` in `EnvConfig`.
 
+## Solar Gain
+
+Solar gains are modeled with a daytime half‑sine profile plus noise:
+
+```
+Q_solar(t) = peak_w * sin(pi * daylight_fraction) + noise
+```
+
+Configure via:
+
+- `solar_peak_w`
+- `solar_sunrise_hour`
+- `solar_sunset_hour`
+- `solar_noise_std_w`
+
 ## Action Space (Discrete)
 
 The environment uses a discrete set of setpoints:
@@ -286,6 +301,7 @@ The environment uses a discrete set of setpoints:
 - Added Gymnasium environment with discrete setpoint control.
 - Added sinusoidal outdoor profile with noise.
 - Added stochastic process noise to indoor temperatures.
+- Added solar gain profile with configurable sunrise/sunset and noise.
 - Set the default episode length to 72 hours.
 - Added training script with normalization (VecNormalize).
 - Added reward with comfort + energy penalty and energy tracking in `info`.

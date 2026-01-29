@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from room_sim import OutdoorTempProfile, RoomSimulator, SimulationState, ThermalParams
+from room_sim import OutdoorTempProfile, RoomSimulator, SimulationState, SolarGainProfile, ThermalParams
 
 
 def test_lumped_converges_to_outdoor_with_ac_off():
@@ -51,6 +51,14 @@ def test_outdoor_profile_cycle():
     t_noon = profile.temperature_c(12 * 3600.0)
     t_peak = profile.temperature_c(15 * 3600.0)
     assert t_peak >= t_noon
+
+
+def test_solar_gain_profile_day_night():
+    profile = SolarGainProfile(peak_w=1000.0, sunrise_hour=6.0, sunset_hour=18.0)
+    t_night = profile.gain_w(2 * 3600.0)
+    t_midday = profile.gain_w(12 * 3600.0)
+    assert t_night == 0.0
+    assert t_midday > 0.0
 
 
 def test_env_step_if_gymnasium_available():

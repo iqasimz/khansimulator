@@ -78,6 +78,22 @@ class OutdoorTempProfile:
         return self.mean_c + self.amplitude_c * math.cos(phase)
 
 
+@dataclass
+class SolarGainProfile:
+    peak_w: float = 800.0
+    sunrise_hour: float = 6.0
+    sunset_hour: float = 18.0
+
+    def gain_w(self, time_s: float) -> float:
+        hours = (time_s / 3600.0) % 24.0
+        if hours < self.sunrise_hour or hours > self.sunset_hour:
+            return 0.0
+        # Smooth half-sine between sunrise and sunset.
+        daylight = self.sunset_hour - self.sunrise_hour
+        x = (hours - self.sunrise_hour) / max(daylight, 1e-6)
+        return self.peak_w * math.sin(math.pi * x)
+
+
 def _internal_gains_w(params: ThermalParams) -> float:
     people_w = params.people_count * params.sensible_w_per_person
     return people_w + params.equipment_w + params.solar_w

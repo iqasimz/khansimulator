@@ -5,7 +5,7 @@ from typing import Dict, Tuple, List
 
 import numpy as np
 
-from room_sim import OutdoorTempProfile, RoomSimulator, SimulationState, ThermalParams
+from room_sim import OutdoorTempProfile, RoomSimulator, SimulationState, SolarGainProfile, ThermalParams
 
 try:
     import gymnasium as gym
@@ -29,6 +29,10 @@ class EnvConfig:
     include_time_of_day: bool = True
     outdoor_noise_std_c: float = 0.5
     process_noise_std_c: float = 0.1
+    solar_peak_w: float = 800.0
+    solar_sunrise_hour: float = 6.0
+    solar_sunset_hour: float = 18.0
+    solar_noise_std_w: float = 50.0
 
 
 class RoomTempEnv(gym.Env):
@@ -43,6 +47,11 @@ class RoomTempEnv(gym.Env):
         self.config = config or EnvConfig()
         self.params = thermal_params or ThermalParams()
         self.profile = outdoor_profile or OutdoorTempProfile()
+        self.solar_profile = SolarGainProfile(
+            peak_w=self.config.solar_peak_w,
+            sunrise_hour=self.config.solar_sunrise_hour,
+            sunset_hour=self.config.solar_sunset_hour,
+        )
 
         self.sim = RoomSimulator(
             model=self.config.model,
@@ -81,6 +90,12 @@ class RoomTempEnv(gym.Env):
         base = self.profile.temperature_c(time_s)
         noise = self._rng.normal(0.0, self.config.outdoor_noise_std_c)
         return base + noise
+
+    def _get_solar_gain(self) -> float:
+        time_s = self.state.time_s if self.state else 0.0
+        base = self.solar_profile.gain_w(time_s)
+        noise = self._rng.normal(0.0, self.config.solar_noise_std_w)
+        return max(0.0, base + noise)
 
     def _obs(self, t_out_c: float) -> np.ndarray:
         if not self.state:
@@ -124,6 +139,7 @@ class RoomTempEnv(gym.Env):
         self.setpoint_c = setpoint
 
         t_out = self._get_outdoor_temp()
+        self.params.solar_w = self._get_solar_gain()
         next_state, info = self.sim.step(self.state, setpoint_c=setpoint, t_out_c=t_out)
         noisy_air = next_state.air_temp_c + self._rng.normal(0.0, self.config.process_noise_std_c)
         noisy_wall = next_state.wall_temp_c
@@ -151,5 +167,6 @@ class RoomTempEnv(gym.Env):
         info_out["outdoor_temp_c"] = t_out
         info_out["air_temp_c"] = self.state.air_temp_c
         info_out["setpoint_c"] = self.setpoint_c
+        info_out["solar_gain_w"] = self.params.solar_w
 
         return self._obs(t_out), reward, terminated, truncated, info_out
